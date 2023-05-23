@@ -18,7 +18,10 @@ app.use((req, res, next) => {
 
 app.use(router);
 
-mongoose.connect('mongodb://localhost:27017/mestodb', {});
+mongoose.connect('mongodb://localhost:27017/mestodb', { useNewUrlParser: true, useUnifiedTopology: true, family: 4 })
+  .catch((err) => {
+    console.log(err);
+  });
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
