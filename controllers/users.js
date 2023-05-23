@@ -24,17 +24,17 @@ const getUserById = (req, res) => {
     .findById(req.params.userId)
     .orFail()
     .then((user) => {
+      if (!user) {
+        res.status(NOT_FOUND).send({
+          message: 'Пользователь не найден',
+        });
+      }
       res.send(user);
     })
     .catch((err) => {
-      if (err.message === 'ValidationError') {
+      if (err.name === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
-        });
-      }
-      if (err.message === 'NotFound') {
-        return res.status(NOT_FOUND).send({
-          message: 'Карточка или пользователь не найден',
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({
@@ -53,9 +53,11 @@ const createUser = (req, res) => {
       res.status(201).send(user);
     })
     .catch((err) => {
-      if (err.message === 'ValidationError') {
+      if (err.name === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
+          err: err.message,
+          stack: err.stack,
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({
@@ -69,20 +71,21 @@ const createUser = (req, res) => {
 const updateProfile = (req, res) => {
   const { name, about } = req.body;
   userModel
-    .findByIdAndUpdate(req.user._id, { name, about })
-    .orFail()
+    .findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
-      res.status(201).send(user);
-    })
-    .catch((err) => {
-      if (err.message === 'ValidationError') {
-        return res.status(BAD_REQUEST).send({
-          message: 'Переданы некорректные данные',
+      if (!user) {
+        res.status(NOT_FOUND).send({
+          message: 'Пользователь не найден',
         });
       }
-      if (err.message === 'NotFound') {
-        return res.status(NOT_FOUND).send({
-          message: 'Карточка или пользователь не найден',
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({
+          message: 'Переданы некорректные данные',
+          err: err.message,
+          stack: err.stack,
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({
@@ -94,21 +97,23 @@ const updateProfile = (req, res) => {
 };
 
 const updateAvatar = (req, res) => {
-  const avatar = req.body;
+  const { avatar } = req.body;
   userModel
-    .findByIdAndUpdate(req.user._id, { avatar })
+    .findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
-      res.status(201).send(user);
-    })
-    .catch((err) => {
-      if (err.message === 'ValidationError') {
-        return res.status(BAD_REQUEST).send({
-          message: 'Переданы некорректные данные',
+      if (!user) {
+        res.status(NOT_FOUND).send({
+          message: 'Пользователь не найден',
         });
       }
-      if (err.message === 'NotFound') {
-        return res.status(NOT_FOUND).send({
-          message: 'Карточка или пользователь не найден',
+      res.status(200).send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({
+          message: 'Переданы некорректные данные',
+          err: err.message,
+          stack: err.stack,
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({

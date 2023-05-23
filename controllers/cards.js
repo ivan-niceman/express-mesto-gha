@@ -20,7 +20,6 @@ const getCard = (req, res) => {
 };
 
 const createCard = (req, res) => {
-  // console.log(req.user._id);
   const { name, link } = req.body;
   const owner = req.user._id;
   cardModel
@@ -29,9 +28,11 @@ const createCard = (req, res) => {
       res.status(201).send(card);
     })
     .catch((err) => {
-      if (err.message === 'ValidationError') {
+      if (err.name === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
+          err: err.message,
+          stack: err.stack,
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({
@@ -46,16 +47,20 @@ const deleteCardById = (req, res) => {
   cardModel
     .findByIdAndRemove(req.params.cardId)
     .orFail()
-    .then((card) => res.send(card))
-    .catch((err) => {
-      if (err.message === 'ValidationError') {
-        return res.status(BAD_REQUEST).send({
-          message: 'Переданы некорректные данные',
+    .then((card) => {
+      if (!card) {
+        res.status(NOT_FOUND).send({
+          message: 'Карточка не найдена',
         });
       }
-      if (err.message === 'NotFound') {
-        return res.status(NOT_FOUND).send({
-          message: 'Карточка или пользователь не найден',
+      res.send(card);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({
+          message: 'Переданы некорректные данные',
+          err: err.message,
+          stack: err.stack,
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({
@@ -73,17 +78,20 @@ const likeCard = (req, res) => {
       { $addToSet: { likes: req.user._id } },
       { new: true },
     )
-    .orFail()
-    .then((card) => res.send(card))
-    .catch((err) => {
-      if (err.message === 'ValidationError') {
-        return res.status(BAD_REQUEST).send({
-          message: 'Переданы некорректные данные',
+    .then((card) => {
+      if (!card) {
+        res.status(NOT_FOUND).send({
+          message: 'Карточка не найдена',
         });
       }
-      if (err.message === 'NotFound') {
-        return res.status(NOT_FOUND).send({
-          message: 'Карточка или пользователь не найден',
+      res.send(card);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        return res.status(BAD_REQUEST).send({
+          message: 'Переданы некорректные данные',
+          err: err.message,
+          stack: err.stack,
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({
@@ -101,16 +109,20 @@ const dislikeCard = (req, res) => {
       { $pull: { likes: req.user._id } },
       { new: true },
     )
-    .then((card) => res.send(card))
+    .then((card) => {
+      if (!card) {
+        res.status(NOT_FOUND).send({
+          message: 'Карточка не найдена',
+        });
+      }
+      res.send(card);
+    })
     .catch((err) => {
       if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
-        });
-      }
-      if (err.message === 'NotFound') {
-        return res.status(NOT_FOUND).send({
-          message: 'Карточка или пользователь не найден',
+          err: err.message,
+          stack: err.stack,
         });
       }
       return res.status(INTERNAL_SERVER_ERROR).send({
