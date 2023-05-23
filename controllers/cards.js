@@ -1,14 +1,14 @@
-const userModel = require('../models/user');
+const cardModel = require('../models/card');
 
 const BAD_REQUEST = 400;
 const NOT_FOUND = 404;
 const INTERNAL_SERVER_ERROR = 500;
 
-const getUser = (req, res) => {
-  userModel
+const getCard = (req, res) => {
+  cardModel
     .find({})
-    .then((users) => {
-      res.send(users);
+    .then((cards) => {
+      res.send(cards);
     })
     .catch((err) => {
       res.status(INTERNAL_SERVER_ERROR).send({
@@ -19,41 +19,16 @@ const getUser = (req, res) => {
     });
 };
 
-const getUserById = (req, res) => {
-  userModel
-    .findById(req.params.userId)
-    .orFail()
-    .then((user) => {
-      res.send(user);
-    })
-    .catch((err) => {
-      if (err.message === 'InvalidId') {
-        return res.status(BAD_REQUEST).send({
-          message: 'Переданы некорректные данные',
-        });
-      }
-      if (err.message === 'NotFound') {
-        return res.status(NOT_FOUND).send({
-          message: 'Карточка или пользователь не найден',
-        });
-      }
-      return res.status(INTERNAL_SERVER_ERROR).send({
-        message: 'На сервере произошла ошибка',
-        err: err.message,
-        stack: err.stack,
-      });
-    });
-};
-
-const createUser = (req, res) => {
-  userModel
+const createCard = (req, res) => {
+  // console.log(req.user._id);
+  cardModel
     .create({
       name: req.body,
-      about: req.body,
-      avatar: req.body,
+      link: req.body,
+      // owner: req.user._id,
     })
-    .then((user) => {
-      res.status(201).send(user);
+    .then((card) => {
+      res.status(201).send(card);
     })
     .catch((err) => {
       if (err.message === 'InvalidId') {
@@ -69,14 +44,12 @@ const createUser = (req, res) => {
     });
 };
 
-const updateProfile = (req, res) => {
-  userModel
-    .findByIdAndUpdate(req.user._id, {
-      name: req.body,
-      about: req.body,
-    })
-    .then((user) => {
-      res.status(201).send(user);
+const deleteCardById = (req, res) => {
+  cardModel
+    .findByIdAndUpdate(req.user._id)
+    .orFail()
+    .then((card) => {
+      res.status(201).send(card);
     })
     .catch((err) => {
       if (err.message === 'InvalidId') {
@@ -97,13 +70,45 @@ const updateProfile = (req, res) => {
     });
 };
 
-const updateAvatar = (req, res) => {
-  userModel
-    .findByIdAndUpdate(req.user._id, {
-      avatar: req.body,
+const likeCard = (req, res) => {
+  cardModel
+    .findByIdAndUpdate(
+      req.params.cardId,
+      { $addToSet: { likes: req.user._id } },
+      { new: true },
+    )
+    .orFail()
+    .then((card) => {
+      res.status(201).send(card);
     })
-    .then((user) => {
-      res.status(201).send(user);
+    .catch((err) => {
+      if (err.message === 'InvalidId') {
+        return res.status(BAD_REQUEST).send({
+          message: 'Переданы некорректные данные',
+        });
+      }
+      if (err.message === 'NotFound') {
+        return res.status(NOT_FOUND).send({
+          message: 'Карточка или пользователь не найден',
+        });
+      }
+      return res.status(INTERNAL_SERVER_ERROR).send({
+        message: 'На сервере произошла ошибка',
+        err: err.message,
+        stack: err.stack,
+      });
+    });
+};
+
+const dislikeCard = (req, res) => {
+  cardModel
+    .findByIdAndUpdate(
+      req.params.cardId,
+      { $pull: { likes: req.user._id } },
+      { new: true },
+    )
+    .then((card) => {
+      res.status(201).send(card);
     })
     .catch((err) => {
       if (err.message === 'InvalidId') {
@@ -125,9 +130,9 @@ const updateAvatar = (req, res) => {
 };
 
 module.exports = {
-  getUser,
-  getUserById,
-  createUser,
-  updateProfile,
-  updateAvatar,
+  getCard,
+  createCard,
+  deleteCardById,
+  likeCard,
+  dislikeCard,
 };
