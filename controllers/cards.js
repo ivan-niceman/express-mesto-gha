@@ -1,11 +1,14 @@
 /* eslint-disable consistent-return */
+const mongoose = require('mongoose');
 const cardModel = require('../models/card');
 
 const BAD_REQUEST = 400;
 const NOT_FOUND = 404;
 const INTERNAL_SERVER_ERROR = 500;
 
-const getCard = (req, res) => {
+const { CastError, ValidationError } = mongoose.Error;
+
+const getCards = (req, res) => {
   cardModel
     .find({})
     .then((cards) => {
@@ -29,7 +32,7 @@ const createCard = (req, res) => {
       res.status(201).send(card);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err instanceof ValidationError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
           err: err.message,
@@ -56,7 +59,7 @@ const deleteCardById = (req, res) => {
       res.send(card);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err instanceof CastError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
           err: err.message,
@@ -87,7 +90,7 @@ const likeCard = (req, res) => {
       res.send(card);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err instanceof CastError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
           err: err.message,
@@ -118,7 +121,7 @@ const dislikeCard = (req, res) => {
       res.send(card);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err instanceof CastError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
           err: err.message,
@@ -134,7 +137,7 @@ const dislikeCard = (req, res) => {
 };
 
 module.exports = {
-  getCard,
+  getCards,
   createCard,
   deleteCardById,
   likeCard,

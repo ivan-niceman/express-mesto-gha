@@ -1,9 +1,12 @@
 /* eslint-disable consistent-return */
+const mongoose = require('mongoose');
 const userModel = require('../models/user');
 
 const BAD_REQUEST = 400;
 const NOT_FOUND = 404;
 const INTERNAL_SERVER_ERROR = 500;
+
+const { CastError, ValidationError } = mongoose.Error;
 
 const getUser = (req, res) => {
   userModel
@@ -32,7 +35,7 @@ const getUserById = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'CastError') {
+      if (err instanceof CastError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -53,7 +56,7 @@ const createUser = (req, res) => {
       res.status(201).send(user);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err instanceof ValidationError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
           err: err.message,
@@ -81,7 +84,7 @@ const updateProfile = (req, res) => {
       res.status(200).send(user);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err instanceof ValidationError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
           err: err.message,
@@ -109,7 +112,7 @@ const updateAvatar = (req, res) => {
       res.status(200).send(user);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err instanceof ValidationError) {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
           err: err.message,
