@@ -25,14 +25,14 @@ const getUserById = (req, res) => {
     .orFail()
     .then((user) => {
       if (!user) {
-        res.status(NOT_FOUND).send({
-          message: 'Пользователь не найден',
+        return res.status(NOT_FOUND).send({
+          message: 'Пользователь с указанным _id не найдена.',
         });
       }
       res.send(user);
     })
     .catch((err) => {
-      if (err.name === 'ValidationError') {
+      if (err.name === 'CastError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -75,7 +75,7 @@ const updateProfile = (req, res) => {
     .then((user) => {
       if (!user) {
         res.status(NOT_FOUND).send({
-          message: 'Пользователь не найден',
+          message: 'Пользователь с указанным _id не найдена',
         });
       }
       res.status(200).send(user);
@@ -103,7 +103,7 @@ const updateAvatar = (req, res) => {
     .then((user) => {
       if (!user) {
         res.status(NOT_FOUND).send({
-          message: 'Пользователь не найден',
+          message: 'Пользователь с указанным _id не найдена',
         });
       }
       res.status(200).send(user);
