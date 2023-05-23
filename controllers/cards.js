@@ -21,17 +21,15 @@ const getCard = (req, res) => {
 
 const createCard = (req, res) => {
   // console.log(req.user._id);
+  const { name, link } = req.body;
+  const owner = req.user._id;
   cardModel
-    .create({
-      name: req.body,
-      link: req.body,
-      // owner: req.user._id,
-    })
+    .create({ name, link, owner })
     .then((card) => {
       res.status(201).send(card);
     })
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -46,13 +44,11 @@ const createCard = (req, res) => {
 
 const deleteCardById = (req, res) => {
   cardModel
-    .findByIdAndUpdate(req.user._id)
+    .findByIdAndRemove(req.params.cardId)
     .orFail()
-    .then((card) => {
-      res.status(201).send(card);
-    })
+    .then((card) => res.send(card))
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -78,11 +74,9 @@ const likeCard = (req, res) => {
       { new: true },
     )
     .orFail()
-    .then((card) => {
-      res.status(201).send(card);
-    })
+    .then((card) => res.send(card))
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -107,11 +101,9 @@ const dislikeCard = (req, res) => {
       { $pull: { likes: req.user._id } },
       { new: true },
     )
-    .then((card) => {
-      res.status(201).send(card);
-    })
+    .then((card) => res.send(card))
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });

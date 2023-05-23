@@ -27,7 +27,7 @@ const getUserById = (req, res) => {
       res.send(user);
     })
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -46,17 +46,14 @@ const getUserById = (req, res) => {
 };
 
 const createUser = (req, res) => {
+  const { name, about, avatar } = req.body;
   userModel
-    .create({
-      name: req.body,
-      about: req.body,
-      avatar: req.body,
-    })
+    .create({ name, about, avatar })
     .then((user) => {
       res.status(201).send(user);
     })
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -70,16 +67,15 @@ const createUser = (req, res) => {
 };
 
 const updateProfile = (req, res) => {
+  const { name, about } = req.body;
   userModel
-    .findByIdAndUpdate(req.user._id, {
-      name: req.body,
-      about: req.body,
-    })
+    .findByIdAndUpdate(req.user._id, { name, about })
+    .orFail()
     .then((user) => {
       res.status(201).send(user);
     })
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
@@ -98,15 +94,14 @@ const updateProfile = (req, res) => {
 };
 
 const updateAvatar = (req, res) => {
+  const avatar = req.body;
   userModel
-    .findByIdAndUpdate(req.user._id, {
-      avatar: req.body,
-    })
+    .findByIdAndUpdate(req.user._id, { avatar })
     .then((user) => {
       res.status(201).send(user);
     })
     .catch((err) => {
-      if (err.message === 'InvalidId') {
+      if (err.message === 'ValidationError') {
         return res.status(BAD_REQUEST).send({
           message: 'Переданы некорректные данные',
         });
