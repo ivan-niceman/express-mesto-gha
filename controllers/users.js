@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 const userModel = require('../models/user');
 
 const BAD_REQUEST = 400;
@@ -22,7 +23,6 @@ const getUser = (req, res) => {
 const getUserById = (req, res) => {
   userModel
     .findById(req.params.userId)
-    .orFail()
     .then((user) => {
       if (!user) {
         return res.status(NOT_FOUND).send({

@@ -1,3 +1,4 @@
+/* eslint-disable consistent-return */
 const cardModel = require('../models/card');
 
 const BAD_REQUEST = 400;
@@ -77,7 +78,6 @@ const likeCard = (req, res) => {
       { $addToSet: { likes: req.user._id } },
       { new: true },
     )
-    .orFail()
     .then((card) => {
       if (!card) {
         return res.status(NOT_FOUND).send({
@@ -109,7 +109,6 @@ const dislikeCard = (req, res) => {
       { $pull: { likes: req.user._id } },
       { new: true },
     )
-    .orFail()
     .then((card) => {
       if (!card) {
         return res.status(NOT_FOUND).send({
