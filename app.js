@@ -1,5 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
+const { login, createUser, getUserInfo } = require('./controllers/users');
+const auth = require('./middlewares/auth');
 const router = require('./routes');
 
 const { PORT = 3000 } = process.env;
@@ -17,7 +19,15 @@ app.use((req, res, next) => {
   next();
 });
 
+app.post('/signin', auth, login);
+app.post('/signup', createUser);
+
+app.use(auth);
+
+app.get('/users/me', getUserInfo);
+
 app.use(router);
+
 app.use((req, res) => {
   res.status(NOT_FOUND).send({ message: 'Не правильный адрес!' });
 });

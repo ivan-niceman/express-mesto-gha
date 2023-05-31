@@ -1,5 +1,7 @@
 /* eslint-disable consistent-return */
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const userModel = require('../models/user');
 
 const BAD_REQUEST = 400;
@@ -49,9 +51,13 @@ const getUserById = (req, res) => {
 };
 
 const createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  userModel
-    .create({ name, about, avatar })
+  const { name, about, avatar, email, password } = req.body;
+
+  bcrypt
+    .hash(password, 10)
+    .then((hashedPassword) => userModel.create({
+      name, about, avatar, email, password: hashedPassword,
+    }))
     .then((user) => {
       res.status(201).send(user);
     })
@@ -127,10 +133,65 @@ const updateAvatar = (req, res) => {
     });
 };
 
+const login = (req, res) => {
+  const { email, password } = req.body;
+  // const { owner } = req.user;
+
+  userModel
+    .findOne({ email })
+    .then((user) => {
+      if (!user) {
+        return Promise.reject(new Error('Неправильные почта или пароль'));
+      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            return Promise.reject(new Error('Неправильные почта или пароль'));
+          }
+          const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+          res.cookie('jwt', token, {
+            httpOnly: true,
+          });
+          res.send({ message: 'Всё верно!' });
+        });
+    })
+    .catch((err) => {
+      res
+        .status(401)
+        .send({ message: err.message });
+    });
+};
+
+const getUserInfo = (req, res) => {
+  const { _id } = req.user;
+
+  userModel
+    .findById(_id)
+    .then((user) => {
+      if (!user) {
+        return res.status(NOT_FOUND).send({
+          message: 'Пользователь не найден',
+        });
+      }
+      res.send(user);
+    })
+    .catch((err) => {
+      res
+        .status(INTERNAL_SERVER_ERROR)
+        .send({
+          message: 'Ошибка сервера',
+          err: err.message,
+          stack: err.stack,
+        });
+    });
+};
+
 module.exports = {
   getUser,
   getUserById,
   createUser,
   updateProfile,
   updateAvatar,
+  login,
+  getUserInfo,
 };
