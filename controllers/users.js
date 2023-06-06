@@ -26,13 +26,13 @@ const getUserById = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'DocumentNotFoundError') {
-        next(new NotFound('Пользователь с указанным _id не найден'));
+        return next(new NotFound('Пользователь с указанным _id не найден'));
       }
       if (err.name === 'CastError') {
-        next(new BadRequest('Переданы некорректные данные'));
+        return next(new BadRequest('Переданы некорректные данные'));
       }
-    })
-    .catch(next);
+      return next(err);
+    });
 };
 
 const createUser = (req, res, next) => {
@@ -75,10 +75,10 @@ const updateProfile = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequest('Переданы некорректные данные'));
+        return next(new BadRequest('Переданы некорректные данные'));
       }
-    })
-    .catch(next);
+      return next(err);
+    });
 };
 
 const updateAvatar = (req, res, next) => {
@@ -91,10 +91,10 @@ const updateAvatar = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new BadRequest('Переданы некорректные данные'));
+        return next(new BadRequest('Переданы некорректные данные'));
       }
-    })
-    .catch(next);
+      return next(err);
+    });
 };
 
 const login = (req, res, next) => {
@@ -108,10 +108,10 @@ const login = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'Error') {
-        next(new Unauthorized('Неправильная почта или пароль'));
+        return next(new Unauthorized('Неправильная почта или пароль'));
       }
-    })
-    .catch(next);
+      return next(err);
+    });
 };
 
 const getUserInfo = (req, res, next) => {
@@ -125,10 +125,10 @@ const getUserInfo = (req, res, next) => {
     })
     .catch((err) => {
       if (err.name === 'DocumentNotFoundError') {
-        next(new NotFound('Пользователь с указанным _id не найден'));
+        return next(new NotFound('Пользователь с указанным _id не найден'));
       }
-    })
-    .catch(next);
+      return next(err);
+    });
 };
 
 module.exports = {
