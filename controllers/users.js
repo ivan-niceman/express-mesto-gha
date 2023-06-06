@@ -47,7 +47,7 @@ const createUser = (req, res, next) => {
         name, about, avatar, email, password: hash,
       }))
     .then((user) => {
-      res.status(201).send({
+      res.status(201).json({
         name: user.name,
         about: user.about,
         avatar: user.avatar,
@@ -56,13 +56,13 @@ const createUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.code === 11000) {
-        next(new Conflict('Пользователь с такой почтой уже существует'));
+        return next(new Conflict('Пользователь с такой почтой уже существует'));
       }
       if (err.name === 'ValidationError') {
-        next(new BadRequest('Переданы некорректные данные'));
+        return next(new BadRequest('Переданы некорректные данные'));
       }
-    })
-    .catch(next);
+      return next(err);
+    });
 };
 
 const updateProfile = (req, res, next) => {
