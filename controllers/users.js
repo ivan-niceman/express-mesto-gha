@@ -9,6 +9,9 @@ const Unauthorized = require('../errors/unauthorized');
 const getUser = (req, res, next) => {
   userModel
     .find({})
+    .orFail(() => {
+      throw new NotFound('Пользователь с указанным _id не найден');
+    })
     .then((users) => {
       res.send(users);
     })
