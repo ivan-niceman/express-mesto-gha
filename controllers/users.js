@@ -10,13 +10,16 @@ const getUser = (req, res, next) => {
   userModel
     .find({})
     .then((users) => {
-      res.send(users);
+      if (!users) {
+        return next(new NotFound('Список пользователей не найден'));
+      }
+      res.status(200).json(users);
     })
     .catch(next);
 };
 
 const getUserById = (req, res, next) => {
-  const { userId } = req.params;
+  const userId = req.params._id;
   userModel
     .findById(userId)
     .then((user) => {
@@ -39,13 +42,18 @@ const createUser = (req, res, next) => {
       name, about, avatar, email, password: hash,
     }))
     .then((user) => {
-      res.status(201).send(user);
+      res.status(201).send({
+        name: user.name,
+        about: user.about,
+        avatar: user.avatar,
+        email: user.email,
+      });
     })
     .catch((err) => {
       if (err.code === 11000) {
         return next(new Conflict('Пользователь с такой почтой уже существует'));
       }
-      return next();
+      return next(err);
     });
 };
 
@@ -91,26 +99,25 @@ const login = (req, res, next) => {
           if (!matched) {
             return next(new Unauthorized('Неправильная почта или пароль'));
           }
-          return user;
+          const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
+          res.status(200).json({ token });
         });
-    })
-    .then((user) => {
-      const token = jwt.sign({ _id: user._id }, { expiresIn: '7d' });
-      res.send({ token });
     })
     .catch(next);
 };
 
 const getUserInfo = (req, res, next) => {
-  const { _id } = req.user;
+  const userId = req.user._id;
 
   userModel
-    .findById(_id)
+    .findById(userId)
     .then((user) => {
       if (!user) {
         return next(new NotFound('Пользователь с указанным _id не найден'));
       }
-      res.send(user);
+      const { password, ...userData } = user.toObject();
+
+      res.status(200).json(userData);
     })
     .catch(next);
 };
