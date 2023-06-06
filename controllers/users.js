@@ -5,28 +5,32 @@ const userModel = require('../models/user');
 const Conflict = require('../errors/conflict');
 const NotFound = require('../errors/notfound');
 const Unauthorized = require('../errors/unauthorized');
+const BadRequest = require('../errors/badrequest');
 
 const getUser = (req, res, next) => {
   userModel
     .find({})
     .then((users) => {
-      if (!users) {
-        return next(new NotFound('Список пользователей не найден'));
-      }
-      res.status(200).json(users);
+      res.send(users);
     })
     .catch(next);
 };
 
 const getUserById = (req, res, next) => {
-  const userId = req.params._id;
+  const { userId } = req.params;
   userModel
     .findById(userId)
+    .orFail()
     .then((user) => {
-      if (!user) {
-        return next(new NotFound('Пользователь с указанным _id не найден'));
-      }
       res.send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'DocumentNotFoundError') {
+        next(new NotFound('Пользователь с указанным _id не найден'));
+      }
+      if (err.name === 'CastError') {
+        next(new BadRequest('Переданы некорректные данные'));
+      }
     })
     .catch(next);
 };
@@ -38,9 +42,10 @@ const createUser = (req, res, next) => {
 
   bcrypt
     .hash(password, 10)
-    .then((hash) => userModel.create({
-      name, about, avatar, email, password: hash,
-    }))
+    .then((hash) => userModel
+      .create({
+        name, about, avatar, email, password: hash,
+      }))
     .then((user) => {
       res.status(201).send({
         name: user.name,
@@ -51,10 +56,13 @@ const createUser = (req, res, next) => {
     })
     .catch((err) => {
       if (err.code === 11000) {
-        return next(new Conflict('Пользователь с такой почтой уже существует'));
+        next(new Conflict('Пользователь с такой почтой уже существует'));
       }
-      return next(err);
-    });
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные'));
+      }
+    })
+    .catch(next);
 };
 
 const updateProfile = (req, res, next) => {
@@ -63,10 +71,12 @@ const updateProfile = (req, res, next) => {
   userModel
     .findByIdAndUpdate(userId, { name, about }, { new: true, runValidators: true })
     .then((user) => {
-      if (!user) {
-        return next(new NotFound('Пользователь с указанным _id не найден'));
+      res.send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные'));
       }
-      res.status(200).send(user);
     })
     .catch(next);
 };
@@ -77,31 +87,29 @@ const updateAvatar = (req, res, next) => {
   userModel
     .findByIdAndUpdate(userId, { avatar }, { new: true, runValidators: true })
     .then((user) => {
-      if (!user) {
-        return next(new NotFound('Пользователь с указанным _id не найден'));
+      res.send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Переданы некорректные данные'));
       }
-      res.status(200).send(user);
     })
     .catch(next);
 };
 
 const login = (req, res, next) => {
-  const { email, password } = req.body;
+  const { email } = req.body;
 
-  userModel
+  return userModel
     .findOne({ email }).select('+password')
     .then((user) => {
-      if (!user) {
-        return next(new Unauthorized('Неправильная почта или пароль'));
+      const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
+      res.send({ token });
+    })
+    .catch((err) => {
+      if (err.name === 'Error') {
+        next(new Unauthorized('Неправильная почта или пароль'));
       }
-      return bcrypt.compare(password, user.password)
-        .then((matched) => {
-          if (!matched) {
-            return next(new Unauthorized('Неправильная почта или пароль'));
-          }
-          const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
-          res.status(200).json({ token });
-        });
     })
     .catch(next);
 };
@@ -111,13 +119,14 @@ const getUserInfo = (req, res, next) => {
 
   userModel
     .findById(userId)
+    .orFail()
     .then((user) => {
-      if (!user) {
-        return next(new NotFound('Пользователь с указанным _id не найден'));
+      res.send(user);
+    })
+    .catch((err) => {
+      if (err.name === 'DocumentNotFoundError') {
+        next(new NotFound('Пользователь с указанным _id не найден'));
       }
-      const { password, ...userData } = user.toObject();
-
-      res.status(200).json(userData);
     })
     .catch(next);
 };
