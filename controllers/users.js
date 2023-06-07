@@ -98,10 +98,10 @@ const updateAvatar = (req, res, next) => {
 };
 
 const login = (req, res, next) => {
-  const { email, password } = req.body;
+  const { email } = req.body;
 
   return userModel
-    .findOne({ email, password })
+    .findOne({ email }).select('+password')
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
       res.send({ token });
