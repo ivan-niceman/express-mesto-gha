@@ -5,11 +5,13 @@ const userModel = require('../models/user');
 const Conflict = require('../errors/conflict');
 const NotFound = require('../errors/notfound');
 const Unauthorized = require('../errors/unauthorized');
-const BadRequest = require('../errors/badrequest');
 
 const getUser = (req, res, next) => {
   userModel
     .find({})
+    .orFail(() => {
+      throw new NotFound('Пользователь с указанным _id не найден');
+    })
     .then((users) => {
       res.send(users);
     })
@@ -17,34 +19,27 @@ const getUser = (req, res, next) => {
 };
 
 const getUserById = (req, res, next) => {
-  const { userId } = req.params;
   userModel
-    .findById(userId)
-    .orFail()
+    .findById(req.params.userId)
+    .orFail(() => {
+      throw new NotFound('Пользователь с указанным _id не найден');
+    })
     .then((user) => {
       res.send(user);
     })
-    .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        return next(new NotFound('Пользователь с указанным _id не найден'));
-      }
-      if (err.name === 'CastError') {
-        return next(new BadRequest('Переданы некорректные данные'));
-      }
-      return next(err);
-    });
+    .catch(next);
 };
 
 const createUser = (req, res, next) => {
-  const {
-    name, about, avatar, email, password,
-  } = req.body;
-
   bcrypt
-    .hash(password, 10)
+    .hash(req.body.password, 10)
     .then((hash) => userModel
       .create({
-        name, about, avatar, email, password: hash,
+        name: req.body.name,
+        about: req.body.about,
+        avatar: req.body.avatar,
+        email: req.body.email,
+        password: hash,
       }))
     .then((user) => {
       res.status(201).send({
@@ -58,9 +53,6 @@ const createUser = (req, res, next) => {
       if (err.code === 11000) {
         return next(new Conflict('Пользователь с такой почтой уже существует'));
       }
-      if (err.name === 'ValidationError') {
-        return next(new BadRequest('Переданы некорректные данные'));
-      }
       return next(err);
     });
 };
@@ -68,30 +60,25 @@ const createUser = (req, res, next) => {
 const updateProfile = (req, res, next) => {
   userModel
     .findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true })
-    .orFail()
+    .orFail(() => {
+      throw new NotFound('Пользователь с указанным _id не найден');
+    })
     .then((user) => {
       res.send(user);
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return next(new BadRequest('Переданы некорректные данные'));
-      }
-      return next(err);
-    });
+    .catch(next);
 };
 
 const updateAvatar = (req, res, next) => {
   userModel
     .findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true })
+    .orFail(() => {
+      throw new NotFound('Пользователь с указанным _id не найден');
+    })
     .then((user) => {
       res.send(user);
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        return next(new BadRequest('Переданы некорректные данные'));
-      }
-      return next(err);
-    });
+    .catch(next);
 };
 
 const login = (req, res, next) => {
@@ -119,20 +106,15 @@ const login = (req, res, next) => {
 };
 
 const getUserInfo = (req, res, next) => {
-  const userId = req.user._id;
-
   userModel
-    .findById(userId)
-    .orFail()
+    .findById(req.user._id)
+    .orFail(() => {
+      throw new NotFound('Пользователь с указанным _id не найден');
+    })
     .then((user) => {
       res.send(user);
     })
-    .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        return next(new NotFound('Пользователь с указанным _id не найден'));
-      }
-      return next(err);
-    });
+    .catch(next);
 };
 
 module.exports = {
