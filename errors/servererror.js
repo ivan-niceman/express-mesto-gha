@@ -8,5 +8,5 @@ module.exports = (err, req, res, next) => {
         : message,
     });
 
-  next();
+  next(err);
 };

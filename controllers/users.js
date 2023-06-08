@@ -8,9 +8,6 @@ const Unauthorized = require('../errors/unauthorized');
 const getUser = (req, res, next) => {
   userModel
     .find({})
-    .orFail(() => {
-      throw new NotFound('Пользователь с указанным _id не найден');
-    })
     .then((users) => {
       res.send(users);
     })
@@ -52,7 +49,7 @@ const createUser = (req, res, next) => {
       if (err.code === 11000) {
         return next(new Conflict('Пользователь с такой почтой уже существует'));
       }
-      return next();
+      return next(err);
     });
 };
 
