@@ -53,7 +53,7 @@ const createUser = (req, res, next) => {
       if (err.code === 11000) {
         return next(new Conflict('Пользователь с такой почтой уже существует'));
       }
-      return next(err);
+      return next();
     });
 };
 
@@ -99,7 +99,7 @@ const login = (req, res, next) => {
         });
     })
     .then((user) => {
-      const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
+      const token = jwt.signToken({ _id: user._id });
       res.send({ token });
     })
     .catch(next);

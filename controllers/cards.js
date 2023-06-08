@@ -1,4 +1,3 @@
-/* eslint-disable consistent-return */
 const cardModel = require('../models/card');
 const NotFound = require('../errors/notfound');
 const Forbidden = require('../errors/forbidden');
