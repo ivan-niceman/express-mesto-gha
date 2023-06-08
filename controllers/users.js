@@ -4,6 +4,7 @@ const userModel = require('../models/user');
 const Conflict = require('../errors/conflict');
 const NotFound = require('../errors/notfound');
 const Unauthorized = require('../errors/unauthorized');
+const BadRequest = require('../errors/badrequest');
 
 const getUser = (req, res, next) => {
   userModel
@@ -49,6 +50,11 @@ const createUser = (req, res, next) => {
       if (err.code === 11000) {
         return next(new Conflict('Пользователь с такой почтой уже существует'));
       }
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Некорректные данные при создании карточки'));
+      } else {
+        next(err);
+      }
       return next(err);
     });
 };
@@ -62,7 +68,13 @@ const updateProfile = (req, res, next) => {
     .then((user) => {
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Некорректные данные при создании карточки'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 const updateAvatar = (req, res, next) => {
@@ -74,7 +86,13 @@ const updateAvatar = (req, res, next) => {
     .then((user) => {
       res.send(user);
     })
-    .catch(next);
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new BadRequest('Некорректные данные при создании карточки'));
+      } else {
+        next(err);
+      }
+    });
 };
 
 const login = (req, res, next) => {

@@ -41,7 +41,8 @@ const deleteCardById = (req, res, next) => {
         .findByIdAndRemove(req.params.cardId)
         .then(() => {
           res.send({ message: 'Карточка удалена' });
-        });
+        })
+        .catch(next);
     })
     .catch(next);
 };
