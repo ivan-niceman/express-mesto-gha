@@ -47,7 +47,7 @@ const createUser = (req, res, next) => {
         name, about, avatar, email, password: hash,
       }))
     .then((user) => {
-      res.status(201).json({
+      res.status(201).send({
         name: user.name,
         about: user.about,
         avatar: user.avatar,
@@ -66,10 +66,9 @@ const createUser = (req, res, next) => {
 };
 
 const updateProfile = (req, res, next) => {
-  const userId = req.user._id;
-  const { name, about } = req.body;
   userModel
-    .findByIdAndUpdate(userId, { name, about }, { new: true, runValidators: true })
+    .findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true })
+    .orFail()
     .then((user) => {
       res.send(user);
     })
@@ -82,10 +81,8 @@ const updateProfile = (req, res, next) => {
 };
 
 const updateAvatar = (req, res, next) => {
-  const userId = req.user._id;
-  const { avatar } = req.body;
   userModel
-    .findByIdAndUpdate(userId, { avatar }, { new: true, runValidators: true })
+    .findByIdAndUpdate(req.user._id, req.body, { new: true, runValidators: true })
     .then((user) => {
       res.send(user);
     })
@@ -98,20 +95,27 @@ const updateAvatar = (req, res, next) => {
 };
 
 const login = (req, res, next) => {
-  const { email } = req.body;
+  const { email, password } = req.body;
 
-  return userModel
+  userModel
     .findOne({ email }).select('+password')
+    .then((user) => {
+      if (!user) {
+        throw new Unauthorized('Неправильная почта или пароль');
+      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw new Unauthorized('Неправильная почта или пароль');
+          }
+          return user;
+        });
+    })
     .then((user) => {
       const token = jwt.sign({ _id: user._id }, 'secret-key', { expiresIn: '7d' });
       res.send({ token });
     })
-    .catch((err) => {
-      if (err.name === 'Error') {
-        return next(new Unauthorized('Неправильная почта или пароль'));
-      }
-      return next(err);
-    });
+    .catch(next);
 };
 
 const getUserInfo = (req, res, next) => {

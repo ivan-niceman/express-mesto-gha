@@ -2,7 +2,6 @@
 const cardModel = require('../models/card');
 const NotFound = require('../errors/notfound');
 const Forbidden = require('../errors/forbidden');
-const BadRequest = require('../errors/badrequest');
 
 const getCards = (req, res, next) => {
   cardModel
@@ -14,32 +13,28 @@ const getCards = (req, res, next) => {
 };
 
 const createCard = (req, res, next) => {
-  const { name, link } = req.body;
-  const owner = req.user._id;
   cardModel
-    .create({ name, link, owner })
+    .create({ owner: req.user._id, ...req.body })
     .then((card) => {
       res.status(201).send(card);
     })
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        next(new BadRequest('Переданы некорректные данные'));
-      }
-    });
+    .catch(next);
 };
 
 const deleteCardById = (req, res, next) => {
-  const { cardId } = req.params;
   cardModel
-    .findByIdAndDelete(cardId)
-    .orFail()
+    .findById(req.params.cardId)
+    .orFail(() => {
+      throw new NotFound('Такой карточки не существует');
+    })
     .then((card) => {
+      if (card.owner.toString() !== req.user._id) {
+        throw new Forbidden('Невозможно удалить данную карточку');
+      }
       cardModel
-        .deleteOne({ _id: card._id, owner: req.user._id })
-        .then((result) => {
-          if (result.deletedCount === 0) {
-            next(new Forbidden('Невозможно удалить данную карточку'));
-          }
+        .findByIdAndRemove(req.params.cardId)
+        .then(() => {
+          res.send({ message: 'Карточка удалена' });
         });
     })
     .catch(next);
@@ -52,13 +47,10 @@ const likeCard = (req, res, next) => {
       { $addToSet: { likes: req.user._id } },
       { new: true },
     )
-    .orFail()
-    .then((card) => res.send(card))
-    .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        next(new NotFound('Карточка с указанным _id не найдена'));
-      }
+    .orFail(() => {
+      throw new NotFound('Карточка с указанным _id не найдена');
     })
+    .then((card) => res.send(card))
     .catch(next);
 };
 
@@ -69,13 +61,10 @@ const dislikeCard = (req, res, next) => {
       { $pull: { likes: req.user._id } },
       { new: true },
     )
-    .orFail()
-    .then((card) => res.send(card))
-    .catch((err) => {
-      if (err.name === 'DocumentNotFoundError') {
-        next(new NotFound('Карточка с указанным _id не найдена'));
-      }
+    .orFail(() => {
+      throw new NotFound('Карточка с указанным _id не найдена');
     })
+    .then((card) => res.send(card))
     .catch(next);
 };
 
