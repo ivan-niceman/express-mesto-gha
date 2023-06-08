@@ -1,6 +1,5 @@
-/* eslint-disable consistent-return */
 const bcrypt = require('bcryptjs');
-const jwt = require('../utils/jwt');
+const jwt = require('jsonwebtoken');
 const userModel = require('../models/user');
 const Conflict = require('../errors/conflict');
 const NotFound = require('../errors/notfound');
@@ -99,7 +98,7 @@ const login = (req, res, next) => {
         });
     })
     .then((user) => {
-      const token = jwt.signToken({ _id: user._id });
+      const token = jwt.sign({ _id: user._id }, 'super-strong-secret', { expiresIn: '7d' });
       res.send({ token });
     })
     .catch(next);

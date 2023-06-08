@@ -3,7 +3,7 @@ const helmet = require('helmet');
 const { errors } = require('celebrate');
 const mongoose = require('mongoose');
 const router = require('./routes');
-const errorHandler = require('./middlewares/errorHandler');
+const serverError = require('./errors/servererror');
 
 const { PORT = 3000 } = process.env;
 
@@ -16,7 +16,7 @@ app.use(express.json());
 
 app.use(router);
 app.use(errors());
-app.use(errorHandler);
+app.use(serverError);
 
 app.listen(PORT, () => {
   console.log(`App listening on port ${PORT}`);
